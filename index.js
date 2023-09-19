@@ -13,18 +13,18 @@ const Chart = ({ chartConfiguration, defaultFontSize, scaleToFit, scrollEnabled,
 	const webviewRef = useRef(null);
 
 	useEffect(() => {
-		webviewRef.current && webviewRef.current.injectJavaScript(getJSToInject());
-	}, [chartConfiguration, defaultFontSize, defaultFontSize]);
+		if (chartConfiguration || defaultFontSize || injectJSBeforeChart) {
+			webviewRef.current && webviewRef.current.injectJavaScript(getJSToInject());
+		}
+	}, [chartConfiguration, defaultFontSize, injectJSBeforeChart]);
 
 	const getJSToInject = () => {
-		let injectJS = '';
-
-		if (injectJSBeforeChart) {
-			injectJS += injectJSBeforeChart;
-		}
-
-		injectJS += settingChartScript.replace('{CONFIG}', chartConfiguration).replace('{DEFAULT_FONT_SIZE}', defaultFontSize);
-
+		let injectJS = `
+          setTimeout(() => {
+              ${injectJSBeforeChart || ''}
+              ${settingChartScript.replace('{CONFIG}', chartConfiguration).replace('{DEFAULT_FONT_SIZE}', defaultFontSize)}
+          }, 100);
+    `;
 		return injectJS;
 	};
 
