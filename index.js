@@ -27,6 +27,7 @@ const Chart = ({ chartConfiguration, defaultFontSize, scaleToFit, scrollEnabled,
     `;
 		return injectJS;
 	};
+	const androidLayerType = Platform.OS === 'android' ? 'hardware' : 'none';
 
 	return (
 		<WebView
@@ -43,6 +44,7 @@ const Chart = ({ chartConfiguration, defaultFontSize, scaleToFit, scrollEnabled,
 			scalesPageToFit={Platform.OS !== 'ios' && scaleToFit}
 			scrollEnabled={scrollEnabled}
 			bounces={false}
+			androidLayerType={androidLayerType}
 		/>
 	);
 };
