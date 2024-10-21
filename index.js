@@ -1,32 +1,26 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Platform } from 'react-native';
 import PropTypes from 'prop-types';
-
 import { WebView } from 'react-native-webview';
+
 const settingChartScript = `
 	Chart.defaults.global.defaultFontSize={DEFAULT_FONT_SIZE};
 	var ctx = document.getElementById("myChart").getContext('2d');
-	var myChart = new Chart( ctx, {CONFIG} );
+	var myChart = new Chart(ctx, {CONFIG});
 `;
 
-const Chart = ({ chartConfiguration, defaultFontSize, scaleToFit, scrollEnabled, injectJSBeforeChart }) => {
+const Chart = ({ chartConfiguration, defaultFontSize = 12, scaleToFit = true, scrollEnabled = false, injectJSBeforeChart = '' }) => {
 	const webviewRef = useRef(null);
 
-	useEffect(() => {
-		if (chartConfiguration || defaultFontSize || injectJSBeforeChart) {
-			webviewRef.current && webviewRef.current.injectJavaScript(getJSToInject());
-		}
-	}, [chartConfiguration, defaultFontSize, injectJSBeforeChart]);
-
 	const getJSToInject = () => {
-		let injectJS = `
-          setTimeout(() => {
-              ${injectJSBeforeChart || ''}
+		return `
+          (function() {
+              ${injectJSBeforeChart}
               ${settingChartScript.replace('{CONFIG}', chartConfiguration).replace('{DEFAULT_FONT_SIZE}', defaultFontSize)}
-          }, 100);
-    `;
-		return injectJS;
+          })();
+        `;
 	};
+
 	const androidLayerType = Platform.OS === 'android' ? 'hardware' : 'none';
 
 	return (
@@ -35,12 +29,17 @@ const Chart = ({ chartConfiguration, defaultFontSize, scaleToFit, scrollEnabled,
 			useWebKit={true}
 			originWhitelist={['*']}
 			ref={webviewRef}
-			injectedJavaScript={getJSToInject()}
 			source={Platform.OS === 'ios' ? require('./dist/index.html') : { uri: 'file:///android_asset/index.html' }}
 			onError={(error) => {
-				console.log(error);
+				console.error('WebView Error: ', error);
 			}}
-			// scalesPageToFit false for IOS and true for Android
+			onLoadEnd={() => {
+				if (chartConfiguration || defaultFontSize || injectJSBeforeChart) {
+					if (webviewRef.current) {
+						webviewRef.current.injectJavaScript(getJSToInject());
+					}
+				}
+			}}
 			scalesPageToFit={Platform.OS !== 'ios' && scaleToFit}
 			scrollEnabled={scrollEnabled}
 			bounces={false}
@@ -50,7 +49,7 @@ const Chart = ({ chartConfiguration, defaultFontSize, scaleToFit, scrollEnabled,
 };
 
 Chart.propTypes = {
-	chartConfiguration: PropTypes.string,
+	chartConfiguration: PropTypes.string.isRequired,
 	defaultFontSize: PropTypes.number,
 	injectJSBeforeChart: PropTypes.string,
 	scaleToFit: PropTypes.bool,
